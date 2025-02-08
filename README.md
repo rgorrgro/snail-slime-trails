@@ -1,5 +1,6 @@
 # snail-slime-trails
 A p5js project, which fills a plane with trails.
+Main focus of the project is to come in touch with Git/Github.
 
 Files:
 - genAutomat.js:
