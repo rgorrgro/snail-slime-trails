@@ -4,13 +4,17 @@
 //
 "use strict";
 class Dialog {
-  constructor(initDrawInit_,runningDrawRunning_,
-               runningStopInit_) {
+  constructor(initRunRunning_,runningDrawRunning_,
+               runningStopInit_,confingSetInit_) {
     this.className = "Dialog";
     //
-    this.initDrawInit = initDrawInit_;
+    //this.initDrawInit = initDrawInit_;
+    this.initRunRunning = initRunRunning_;
     this.runningDrawRunning = runningDrawRunning_;
     this.runningStopInit = runningStopInit_;
+    this.confingSetInit = confingSetInit_;
+    //
+    this.conf = [];
     //
 	this.auto = new Automat ( 'Dialog', 1 );
     //
@@ -22,232 +26,279 @@ class Dialog {
 	this.enumSAVE = this.auto.confEventSet('SAVE');
 	this.enumDRAW = this.auto.confEventSet('DRAW');
 	this.enumCONFIG = this.auto.confEventSet('CONFIG');
+	this.enumCLICK = this.auto.confEventSet('CLICK');
+	this.enumSET = this.auto.confEventSet('SET');
+	this.enumRESET = this.auto.confEventSet('RESET');
 	this.auto.confEventEnd ();
     //
 	this.auto.confStateBegin ();
     this.snumCONF = this.auto.snumCONF;
     this.snumINIT = this.auto.snumINIT;
-    this.snumCONFING = this.auto.confStateSet
-      ('CONFING');
-    this.snumPAUSING = this.auto.confStateSet
-      ('PAUSING');
+    this.snumINITDIA = this.auto.confStateSet
+      ('INITDIA');
     this.snumRUNNING = this.auto.confStateSet
       ('RUNNING');
-	this.auto.confStateEnd ();
-	//
+    this.snumPAUSING = this.auto.confStateSet
+      ('PAUSING');
+    this.snumCONFING = this.auto.confStateSet
+      ('CONFING');
+	this.auto.confStateEnd();
+	// CONF
     this.auto.confSetTransition ( 
       this.snumCONF,this.enumDRAW,this.snumCONF, 
       undefined); 
     this.auto.confSetTransition ( 
+      this.snumCONF,this.enumCLICK,this.snumCONF, 
+      undefined);
+    this.auto.confSetTransition ( 
       this.snumCONF,this.enumINIT,this.snumINIT, 
       (p1,p2) => {
-        this.initDialogINIT();
-        this.initDialogPAUSING();
-        this.initDialogRUNNING();
-        this.displayDialogINIT();
-      } ); 
-	//
+        canvas.mouseClicked(this.mpCLICK);
+        //print("Dialog create divINIT");
+        let buttonRUN1 = createButton ('RUN');
+        buttonRUN1.position ( 0, 0);
+        buttonRUN1.style("background","yellow");
+        buttonRUN1.mousePressed(this.mpRUN);
+        let buttonCONFIG1 = createButton ('CONFIG');
+        buttonCONFIG1.position ( 100, 0);
+        buttonCONFIG1.style("background","yellow");
+        buttonCONFIG1.mousePressed(this.mpCONFIG);
+        this.divINIT = createDiv();
+        this.divINIT.child(buttonRUN1);
+        this.divINIT.child(buttonCONFIG1);
+        this.divINIT.style("display","none");
+        this.divINIT.style("background","yellow");
+        //print("Dialog create divPAUSING");
+        let buttonRUN2 = createButton ('RUN');
+        buttonRUN2.position ( 0, 0);
+        buttonRUN2.style("background","yellow");
+        buttonRUN2.mousePressed(this.mpRUN);
+        let buttonSAVE = createButton ('SAVE');
+        buttonSAVE.position ( 200, 0);
+        buttonSAVE.style("background","yellow");
+        buttonSAVE.mousePressed(this.mpSAVE);
+        let buttonSTOP = createButton ('STOP');
+        buttonSTOP.position ( 100, 0);
+        buttonSTOP.style("background","yellow");
+        buttonSTOP.mousePressed(this.mpSTOP);
+        this.divPAUSING = createDiv();
+        this.divPAUSING.child(buttonRUN2);
+        this.divPAUSING.child(buttonSTOP);
+        this.divPAUSING.child(buttonSAVE);
+        this.divPAUSING.style("display","none"); 
+        //print("Dialog create divCONFING");
+        let buttonSET = createButton ('SET');
+        buttonSET.position(0,0);
+        buttonSET.style("background","yellow");
+        buttonSET.mousePressed(this.mpSET);
+        let buttonRESET = createButton ('RESET');
+        buttonRESET.position(66,0);
+        buttonRESET.style("background","yellow");
+        buttonRESET.mousePressed(this.mpRESET);
+        this.divCONFING = createDiv();
+        this.divCONFING.child(buttonSET);
+        this.divCONFING.child(buttonRESET);
+        this.divCONFING.style("display","none"); 
+      }); 
+    // INIT
     this.auto.confSetTransition ( 
       this.snumINIT,this.enumDRAW,this.snumINIT,
-      (p1,p2) => {
-        this.initDrawInit();
-      }); 
+      undefined);
+//        (p1,p2)=>{this.initDrawInit();}); 
     this.auto.confSetTransition ( 
-      this.snumINIT,this.enumRUN,this.snumRUNNING,
-      (p1,p2) => {
-        this.displayDialogRUNNING();
-      }); 
-    /*this.auto.confSetTransition ( 
-      this.snumINIT,this.enumCONFIG,this.snumCONFING,
-      (p1,p2) => {
-        print("INIT,CONF,CONFING");
-      }); 
+      this.snumINIT,this.enumCLICK,this.snumINITDIA,
+        (p1,p2)=>{
+          this.divINIT.style("display","block")
+        }); 
+    // INITDIA
     this.auto.confSetTransition ( 
-      this.snumCONFING,this.enumCONFIG,this.snumINIT,
+      this.snumINITDIA,this.enumDRAW,this.snumINITDIA,
+      undefined);
+    this.auto.confSetTransition ( 
+      this.snumINITDIA,this.enumCLICK,this.snumINITDIA,
+        undefined); 
+    this.auto.confSetTransition ( 
+      this.snumINITDIA,this.enumRUN,this.snumRUNNING,
+        (p1,p2)=>{
+          this.divINIT.style("display","none");
+          this.initRunRunning();
+        }); 
+    this.auto.confSetTransition ( 
+    this.snumINITDIA,this.enumCONFIG,this.snumCONFING,
+        (p1,p2) => {
+          //print("XXX INITDIA => CONFIG => CONFING")
+          this.divINIT.style("display","none")
+          this.divCONFING.style("display","block"); 
+        }); 
+	// RUNNING
+    this.auto.confSetTransition ( 
+      this.snumRUNNING,this.enumDRAW,this.snumRUNNING,
       (p1,p2) => {
-        print("CONFING,CONF,INIT");
+        //print("XXX RUNNING => DRAW => RUNNING")
+        this.runningDrawRunning();});
+    this.auto.confSetTransition ( 
+      this.snumRUNNING,this.enumCLICK,this.snumPAUSING,
+      (p1,p2) => {
+        //print("XXX RUNNING => CLICK => PAUSING")
+        this.divPAUSING.style("display","block"); 
+        //this.displayDialogPAUSING();
       }); 
+	// PAUSING
     this.auto.confSetTransition ( 
-      this.snumCONFING,this.enumRUN,this.snumCONFING,
-      (p1,p2) => {
-        print("CONFING,RUN,CONFING");
-      });*/ 
-	//
-    this.auto.confSetTransition ( 
-      this.snumPAUSING,this.enumRUN,this.snumPAUSING,
+      this.snumPAUSING,this.enumDRAW,this.snumPAUSING,
       undefined); 
 	this.auto.confSetTransition ( 
       this.snumPAUSING,this.enumRUN,this.snumRUNNING,
       (p1,p2) => {
-        this.displayDialogRUNNING();
+        //print("XXX PAUSING => RUN => RUNNING")
+        this.divPAUSING.style("display","none"); 
       }); 
 	this.auto.confSetTransition ( 
       this.snumPAUSING,this.enumSAVE,this.snumRUNNING,
       (p1,p2) => {
-        this.displayDialogRUNNING();
-        //fileInOut.writeCanvas(canvas);
-      }); 
-	//
-    this.auto.confSetTransition ( 
-      this.snumRUNNING,this.enumDRAW,this.snumRUNNING,
-      (p1,p2) => {
-        this.runningDrawRunning();
-      //  filterAda.draw();
-      });
-    this.auto.confSetTransition ( 
-      this.snumRUNNING,this.enumPAUSE,this.snumPAUSING,
-      (p1,p2) => {
-        this.displayDialogPAUSING();
+        //print("XXX PAUSING => SAVE => RUNNING")
+        work.save("mysketch");
+        this.divPAUSING.style("display","none"); 
       }); 
 	this.auto.confSetTransition ( 
-      this.snumRUNNING,this.enumSTOP,this.snumINIT,
+      this.snumPAUSING,this.enumSTOP,this.snumINIT,
       (p1,p2) => {
-        this.displayDialogINIT();
+        //print("XXX PAUSING => STOP => INIT")
+        this.divPAUSING.style("display","none"); 
         this.runningStopInit();
-        //filtersAda = new FiltersAda();
-      });
+      }); 
+    // CONFING
+    this.auto.confSetTransition ( 
+      this.snumCONFING,this.enumSET,this.snumINIT,
+      (p1,p2) => {
+        this.confingSetInit();
+        this.divCONFING.style("display","none"); 
+      }); 
+    this.auto.confSetTransition ( 
+      this.snumCONFING,this.enumRESET,this.snumINIT,
+      (p1,p2) => {
+        this.divCONFING.style("display","none"); 
+      }); 
+    this.auto.confSetTransition ( 
+      this.snumCONFING,this.enumDRAW,this.snumCONFING, 
+      undefined);
     //
     this.auto.init ( );
-    print(this.auto.toString());
-  }
-  //
-  // Dialog functions
-  //
-  initDialogINIT() {
-    //print("Dialog|initDialogINIT");
-    let buttonRUN1 = createButton ('RUN');
-    buttonRUN1.position ( 0, height);
-    buttonRUN1.mousePressed 
-      (this.mousePressedRUN);
-    //let buttonCONFIG1 = createButton ('CONFIG');
-    //buttonCONFIG1.position ( 100, height);
-    //buttonCONFIG1.mousePressed 
-    //  (this.mousePressedCONFIG);
-    this.divINIT = createDiv();
-    this.divINIT.child(buttonRUN1);
-    //this.divINIT.child(buttonCONFIG1);
-  }
-  initDialogPAUSING() {
-    //print("Dialog|initDialogPAUSING");
-    let buttonRUN2 = createButton ('RUN');
-    buttonRUN2.position ( 0, height);
-    buttonRUN2.mousePressed 
-      (this.mousePressedRUN);
-    let buttonSAVE2 = createButton ('SAVE');
-    buttonSAVE2.position ( 100, height);
-    buttonSAVE2.mousePressed 
-      (this.mousePressedSAVE);
-    this.divPAUSING = createDiv();
-    this.divPAUSING.child(buttonRUN2);
-    this.divPAUSING.child(buttonSAVE2);
-  }
-  initDialogRUNNING() {
-    //print("Dialog|initDialogRUNNING");
-    let buttonPAUSE3 = createButton ('PAUSE');
-    buttonPAUSE3.position ( 0, height);
-    buttonPAUSE3.mousePressed 
-      (this.mousePressedPAUSE);
-    let buttonSTOP3 = createButton ('STOP');
-    buttonSTOP3.position ( 100, height);
-    buttonSTOP3.mousePressed 
-      (this.mousePressedSTOP);
-    this.divRUNNING = createDiv();
-    this.divRUNNING.child(buttonSTOP3);
-    this.divRUNNING.child(buttonPAUSE3);
-  }
-  displayDialogINIT() {
-    print("Dialog|displayDialogINIT");
-    this.divPAUSING.style("display","none"); 
-    this.divRUNNING.style("display","none")
-    this.divINIT.style("display","block")
-  }
-  displayDialogPAUSING() {
-    //print("Dialog|displayDialogPAUSING");
-    this.divINIT.style("display","none")
-    this.divRUNNING.style("display","none")
-    this.divPAUSING.style("display","block"); 
-  }
-  displayDialogRUNNING() {
-    //print("Dialog|displayDialogRUNNING");
-    this.divINIT.style("display","none")
-    this.divPAUSING.style("display","none"); 
-    this.divRUNNING.style("display","block")
   }
   //
   // Mouse events
   //
-  mousePressedCONFIG () {
+  mpCONFIG () {
     dialog.auto.event(dialog.enumCONFIG, {});
   }
-  mousePressedRUN () {
+  mpRUN () {
     dialog.auto.event(dialog.enumRUN, {});
   }
-  mousePressedPAUSE () {
+  mpPAUSE () {
     dialog.auto.event(dialog.enumPAUSE, {});
   }
-  mousePressedSTOP () {
+  mpSTOP () {
     dialog.auto.event(dialog.enumSTOP, {});
   }
-  mousePressedSAVE () {
+  mpSAVE () {
     dialog.auto.event(dialog.enumSAVE, {});
   }
-}
-////////////////////////
-/*
-let sketch2 = function (p2) {
-  p2.showResize = false;
-  p2.resizeWidthTxt = null;
-  p2.resizeWidthOld = null;
-  p2.resizeWidthSli = null;
-  p2.resizeWidthNew = null;
-  p2.resizeHeight = null;
-  p2.resizeHeightSlider = null;
-  
-  p2.setup = function () {
-    p2.canvas = p2.createCanvas(300, 300);
-    p2.background(200);
-    p2.resize = p2.createButton('Resize');
-    p2.resize.position(0, 0);
-    p2.resize.mouseClicked(p2.funcResize);
+  mpCLICK () {
+    dialog.auto.event(dialog.enumCLICK, {});
   }
-
-  p2.draw = function () {
-    //p2.fill(255, 50, 0, 25);
-    p2.ellipse(100, 100, 50, 50);
-    if (p2.showResize) {
-      let y = 24;
-      //console.log('New:' + p2.resizeWidthSli.value());
-      //menu.text(p2.resizeWidthSli.value(), 400, 24);
+  mpSET () {
+    dialog.auto.event(dialog.enumSET, {});
+  }
+  mpRESET () {
+    dialog.auto.event(dialog.enumRESET, {});
+  }
+  //
+  // External functions
+  //
+  createSlider(name_,height_,orig_,min_,max_) {
+    let h = new DialogConfigSlider(
+      name_,height_,orig_,min_,max_);
+    this.conf.push(h);
+    this.divCONFING.child(h.getDiv());
+  }
+  createRadio(name_,height_,orig_,arr_) {
+    let h = new DialogConfigRadio(
+      name_,height_,orig_,arr_);
+    this.conf.push(h);
+    this.divCONFING.child(h.getDiv());
+  }
+  updateConfigData() {
+    for(let i=0;i<this.conf.length;i++) {
+      this.conf[i].updateConfigData();
     }
   }
-  
-  p2.funcResize = function() {
-    if (!p2.showResize) {
-      p2.showResize = true;
-      let y = 24;
-      p2.resizeWidthTxt = p2.createButton('Width');
-      p2.resizeWidthTxt.position(10, y);
-      p2.resizeWidthOld = p2.createButton('Old:' + main.width);
-      p2.resizeWidthOld.position(80, y);
-      p2.resizeWidthSli = p2.createSlider(100, main.windowWidth, main.width);
-      p2.resizeWidthSli.position(160, y);
-      p2.resizeWidthNew = p2.createButton('New:' + p2.resizeWidthSli.value());
-      p2.resizeWidthNew.position(300, y);
-      p2.resizeHeight = p2.createButton('Height (' + main.height + ')');
-      p2.resizeHeight.position(10, 48);
-      //p2.resizeHeight.mouseClicked(p2.funcNull);
-      p2.resizeHeightSlider = p2.createSlider(100, main.windowHeight, main.height);
-      p2.resizeHeightSlider.position(100, 48);
-    } else {
-      p2.resizeWidth.remove();
-      p2.resizeHeight.remove();
-      p2.showResize = false;      
-    }
-    //main.canvas.resize(main.windowWidth, main.windowHeight); 
-    //main.background(200);
-  }
-
-  p2.funcNull = function() {
+  getValue(nr_) {
+    let h = this.conf[nr_];
+    return(h.getData());
   }
 }
-*/
+//
+// Radio button class
+//
+class DialogConfigRadio {
+  constructor(name_,height_,orig_,arr_) {
+    let bName = createButton(name_);
+    bName.position(0,height_);
+    bName.style("background","yellow");
+    this.orig = orig_;
+    this.data = orig_;
+    this.radio = createRadio(name_);
+    this.radio.position(200,height_);
+    this.radio.size(200);
+    for(let i=0;i<arr_.length;i++) {
+      this.radio.option(i,arr_[i]);
+    }
+    this.radio.style("background","yellow");
+    this.radio.selected(0);
+    this.div = createDiv();
+    this.div.child(bName);
+    this.div.child(this.radio);
+  }
+  getDiv() {return(this.div);}
+  getOrig() {
+    this.data = this.orig;
+    print("getOrig="+this.data);
+    return(this.data);
+  }
+  getData() {
+    this.data = this.radio.value();
+    //print("getData="+this.data);
+    return(this.data);
+  }
+}
+//
+// Slider class
+//
+class DialogConfigSlider {
+  constructor(name_,height_,orig_,min_,max_) {
+    let s = name_+"(min="+min_+",max="+max_+")";
+    let bName = createButton(s);
+    bName.position(0,height_);
+    bName.style("background","yellow");
+    this.orig = orig_;
+    this.data = orig_;
+    this.slider = createSlider(
+      min_,max_,this.data);
+    this.slider.position(200,height_);
+    this.slider.style("background","yellow");
+    this.div = createDiv();
+    this.div.child(bName);
+    this.div.child(this.slider);
+  }
+  getDiv() {return(this.div);}
+  getOrig() {
+    this.data = this.orig;
+    print("getOrig="+this.data);
+    return(this.data);
+  }
+  getData() {
+    this.data = this.slider.value();
+    print("getData="+this.data);
+    return(this.data);
+  }
+}
