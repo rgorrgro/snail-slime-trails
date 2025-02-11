@@ -8,8 +8,8 @@ class Snails {
     this.cnty = cnty_;
     // Compute bezier offsets
     let siz1 = 
-      (int(width/cntx_)<int(width/cnty_)?
-      int(width/cntx_):int(width/cnty_));
+      (int(width/cntx_)<int(height/cnty_)?
+      int(width/cntx_):int(height/cnty_));
     let siz2 = siz1/2;
     let add1 = siz1*40/100;
     let add2 = siz1*5/100;
@@ -21,8 +21,8 @@ class Snails {
     this.ctrY = [add1,add1,add1,0,0,-add1,-add1,-add1];
     //
     this.siz1 = 
-      (int(width/cntx_)<int(width/cnty_)?
-      int(width/cntx_):int(width/cnty_));
+      (int(width/cntx_)<int(height/cnty_)?
+      int(width/cntx_):int(height/cnty_));
     //print ( "Snails|const cnx|cnty|siz=" + 
     //  this.cntx + "|" + this.cnty + "|" + this.siz1);
     this.siz2 = this.siz1/2;

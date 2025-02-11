@@ -1,5 +1,7 @@
 // R. Gorr-Grohmann
-//  October 2024
+//  2025-02-11
+//
+let hlp;
 //
 let fileInOut;
 let canvas;
@@ -8,21 +10,38 @@ let sColor;
 let dialog;
 let snailsAda;
 //
+// size of display
+let dwidth = 100;
+let dheight = 100;
 // number of draw calls per second
-let nrFrameRate = 20;
+let frames = 24;
+// format
+let sformat = "Smartphone-P";
+let aformat = [];
+// rectangle and line sizes
+let sizeRect = 40;
+let sizeLine = 8;
+// number of rectangles in X and Y
+let cntRectX = 12;
+let cntRectY = 12;
 // mean number of makeSnail calls which create a snail
 let nrMeanMakeCalls = 20;
-// Number of rectangles in X and Y
-let nrXRectangles = 12;
-let nrYRectangles = 12;
-// size of snails
-let snailSize = 5;
 //
 function setup() {
+  // Config Help Functions
+  hlp = new Help();
+  hlp.dspSetSizes1(innerWidth,innerHeight,sformat);
+  hlp.dspSetSizes2(sizeLine,sizeRect);
+  dwidth = hlp.dspGetWidth();
+  dheight = hlp.dspGetHeight();
+  sizeLine = hlp.dspGetSizeLine();
+  sizeRect = hlp.dspGetRectangleSize();
+  cntRectX = hlp.dspGetRectangleX();
+  cntRectY = hlp.dspGetRectangleY();
   // File In/Out
   fileInOut = new FileInOut("snail","jpg");
   // Canvas
-  canvas = createCanvas(500, 500);
+  canvas = createCanvas(dwidth,dheight);
   // Color
   colorMode(RGB, 255);
   bgColor = new ChangingColors('Background', 
@@ -30,29 +49,58 @@ function setup() {
     [96,32,192,255],[1,1,1,0]); 
   sColor = new ChangingColors('Snails', 
     [192,192,0,255],[255,255,64,255],
-    [224,224,32,255],[7,11,1,0]); 
-  // Main dialog
-  dialog = new Dialog(
-    //initDrawInit
-    (p1_,p2_) => {background(bgColor.getStepColor());},
-    //runningDrawRunning
+    [224,224,32,255],[7,11,1,0]);
+  background(bgColor.getStepColor());
+// Main dialog
+    dialog = new Dialog(
+    //S=Init,E=Run,NS=Running
     (p1_,p2_) => {
+      hlp.tst("S=Init,E=Run,NS=Running");
+      background(bgColor.getStepColor());
+    },
+    //S=Running,E=Draw,NS=Running
+    (p1_,p2_) => {
+      hlp.tst("S=Running,E=Draw,NS=Running");
       if (int(random(nrMeanMakeCalls))==1) {
+        hlp.tst("make new snail");
         snailsAda.makeSnail();
       }
       snailsAda.drawSnail();
       snailsAda.deleteSnail();
     },
-    //runningStopInit
-    (p1_,p2_) => {snailsAda = new SnailsAda();}
+    //S=Running,E=Stop,NS=Init
+    (p1_,p2_) => {
+      hlp.tst("S=Running,E=Stop,NS=Init");
+      snailsAda = new SnailsAda();
+    },
+    //S=Confing,E=Config,NS=Init
+    (p1_,p2_) => {
+      hlp.tst("S=Confing,E=Config,NS=Init");
+      frames = dialog.getValue(0);
+      //sformat = aformat[dialog.getValue(1)];
+      hlp.tst("frames=",frames);
+      frameRate(frames);
+    }
   );
-  // Snails Adapter
+  // Config Dialog
+  
+  hlp.tst("frames:",frames);
+  dialog.createSlider(
+      'frames',25,frames,1,24);
+  hlp.tst("sformat:",sformat);
+  //aformat = hlp.dspGetFormatNameArray();
+  hlp.tst("aformat:",aformat);
+  //dialog.createRadio(
+  //    'format',50,sformat,aformat);
+  // Start adapter
+  //hlp.tstOn();
+  //hlp.tstAutOn();
   snailsAda = new SnailsAda();
-  //print(snailsAda.toString());
+  frameRate(frames);
 }
 //
 function draw() {
-  frameRate(nrFrameRate); // framesPerSec
+  hlp.tst("Main|draw");
   dialog.auto.event(dialog.enumDRAW, {});
 }
 //
@@ -60,10 +108,11 @@ function draw() {
 //
 class SnailsAda {
   constructor () {
-    //print("SnailsAda|const");
-    this.snails = new Snails 
-      (nrXRectangles,nrYRectangles);
+    hlp.tst("SnailsAda|const");
+    this.snails = new Snails (cntRectX,cntRectY);
     this.snailsLen = this.snails.arr.length;
+    hlp.tst("SnailsAda|const snailsLen",
+      this.snailsLen);
     this.arr = [];
   }
   noToString() {
@@ -73,11 +122,11 @@ class SnailsAda {
     return(s);
   }
   drawSnail() {
-    //print("SnailsAda|drawSnail B ");
+    //hlp.tst("SnailsAda|drawSnail B ");
     for(let i=0;i<this.arr.length;i++) {
       this.arr[i].draw();
     }
-    //print("SnailsAda|drawSnail E ");
+    //hlp.tst("SnailsAda|drawSnail E ");
   }
   deleteSnail() {
     //print("SnailsAda|deleteSnail B "+
@@ -169,7 +218,7 @@ class SnailAda {
       this.snailPart.ba.y, t);
     stroke(this.color);
     fill(this.color);
-    circle(x,y,snailSize);
+    circle(x,y,sizeLine);
     return(true);
   }
 }
