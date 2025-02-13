@@ -19,7 +19,7 @@ let frames = 24;
 let sformat = "Smartphone-P";
 let aformat = [];
 // rectangle and line sizes
-let sizeRect = 40;
+let sizeRect = 80;
 let sizeLine = 8;
 // number of rectangles in X and Y
 let cntRectX = 12;
