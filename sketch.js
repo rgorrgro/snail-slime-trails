@@ -1,196 +1,224 @@
 // R. Gorr-Grohmann
-//  2025-02-11
-//
+//  February 2025
+//  Drawing colored snail slime pathes
+//  Background format and geometry can be configured.
+//  Some colors, numbers and sizes, too.
+//  
+// Run time global parammeters
 let hlp;
-//
 let fileInOut;
 let canvas;
-let bgColor;
-let sColor;
-let dialog;
+let dialogMain;
 let snailsAda;
 //
-// size of display
-let dwidth = 100;
-let dheight = 100;
-// number of draw calls per second
-let frames = 24;
-// format
-let sformat = "Smartphone-P";
-let aformat = [];
-// rectangle and line sizes
-let sizeRect = 80;
-let sizeLine = 8;
-// number of rectangles in X and Y
-let cntRectX = 12;
-let cntRectY = 12;
-// mean number of makeSnail calls which create a snail
-let nrMeanMakeCalls = 20;
+// Config global parameters
+//   number of draw calls per second
+let frames;
+//   format
+let displayformat;
+//   canvas size
+//let canvaswidthmin = 200;
+let canvaswidth, canvasheight;
+//   rectangle number and size 
+let cntrectx, cntrecty;
+let rectsizemin;
+let rectsize;
+//   line size
+let linesize;
+//   colors
+let bgcolor, linecolor;
+//   snail numbers and length
+let snailcnt, snaillen;
+// etc
+let addv;
+let snailtype = "All";
+let snailtypeArray = ["All","One"];
+let colors;
 //
 function setup() {
-  // Config Help Functions
   hlp = new Help();
-  hlp.dspSetSizes1(innerWidth,innerHeight,sformat);
-  hlp.dspSetSizes2(sizeLine,sizeRect);
-  dwidth = hlp.dspGetWidth();
-  dheight = hlp.dspGetHeight();
-  sizeLine = hlp.dspGetSizeLine();
-  sizeRect = hlp.dspGetRectangleSize();
-  cntRectX = hlp.dspGetRectangleX();
-  cntRectY = hlp.dspGetRectangleY();
-  // File In/Out
-  fileInOut = new FileInOut("snail","jpg");
-  // Canvas
-  canvas = createCanvas(dwidth,dheight);
-  // Color
+  hlp.tstOff();
+  hlp.tstAutOff();
+  hlp.tstConfOff();
+  // Canvas width and height
+  canvaswidth = innerWidth;
+  canvasheight = innerHeight;
+  displayformat = hlp.displayformatArray[4];
+  hlp.chkConfFormat();
+  hlp.tstConf("Format|X|Y",displayformat[0],
+           displayformat[1],displayformat[2]);
+  hlp.tstConf("Display W|H",canvaswidth,canvasheight);
+  // Rectangles numbers in X and Y and size
+  rectsizemin = 15;
+  cntrectx = new MinMaxValue("RectCntX",8,2,
+                  int(canvaswidth/rectsizemin-1));
+  rectsize = int(canvaswidth/cntrectx.val-1);
+  cntrecty = int(canvasheight/rectsize);
+  hlp.tstConf("Count X|Y|Size",
+               cntrectx.val,cntrecty,rectsize);
+  // Centralization vector
+  addv = createVector(
+    (canvaswidth-(cntrectx*rectsize))/2,
+    (canvasheight-(cntrecty*rectsize))/2);
+  // Linesize
+  linesize = new MinMaxValue("Linesize",
+                  int(rectsize/5),
+                  1,int(rectsize/4));
+  hlp.tstConf("Linesize",linesize.val);
+  //
+  snailcnt = new MinMaxValue("SnailMaxCnt",5,1,20);
+  snaillen = new MinMaxValue("SnailMinLen",3,1,5);
+  hlp.tstConf("Snail MaxCnt|MinLen",
+               snailcnt.val,snaillen.val);
+  // Colors
+  bgcolor = hlp.colorArray[6];
+  linecolor = hlp.colorArray[7];
+  hlp.chkConfColor();
+  hlp.tstConf("Color BG|Line",bgcolor,linecolor);
   colorMode(RGB, 255);
-  bgColor = new ChangingColors('Background', 
-    [64,0,128,255],[192,128,255,255],
-    [96,32,192,255],[1,1,1,0]); 
-  sColor = new ChangingColors('Snails', 
-    [192,192,0,255],[255,255,64,255],
-    [224,224,32,255],[7,11,1,0]);
-  background(bgColor.getStepColor());
-// Main dialog
-    dialog = new Dialog(
+  background(bgcolor[1]);
+  //
+  frames   = new MinMaxValue("Frames",24,1,24);
+  frameRate(frames.val);
+  hlp.tstConfOff();
+  // Canvas
+  canvas = createCanvas(canvaswidth,canvasheight);
+  // Dialog
+  dialogMain = new DialogMain(
     //S=Init,E=Run,NS=Running
     (p1_,p2_) => {
+      snailsAda = new 
+        SnailsAdaFixNumberOfSnails();
       hlp.tst("S=Init,E=Run,NS=Running");
-      background(bgColor.getStepColor());
+      //background(colors.getBgcolor());
+      background(bgcolor[1]);
     },
     //S=Running,E=Draw,NS=Running
     (p1_,p2_) => {
       hlp.tst("S=Running,E=Draw,NS=Running");
-      if (int(random(nrMeanMakeCalls))==1) {
-        hlp.tst("make new snail");
-        snailsAda.makeSnail();
-      }
       snailsAda.drawSnail();
-      snailsAda.deleteSnail();
-    },
-    //S=Running,E=Stop,NS=Init
-    (p1_,p2_) => {
-      hlp.tst("S=Running,E=Stop,NS=Init");
-      snailsAda = new SnailsAda();
-    },
-    //S=Confing,E=Config,NS=Init
-    (p1_,p2_) => {
-      hlp.tst("S=Confing,E=Config,NS=Init");
-      frames = dialog.getValue(0);
-      //sformat = aformat[dialog.getValue(1)];
-      hlp.tst("frames=",frames);
-      frameRate(frames);
     }
   );
-  // Config Dialog
-  
-  hlp.tst("frames:",frames);
-  dialog.createSlider(
-      'frames',25,frames,1,24);
-  hlp.tst("sformat:",sformat);
-  //aformat = hlp.dspGetFormatNameArray();
-  hlp.tst("aformat:",aformat);
-  //dialog.createRadio(
-  //    'format',50,sformat,aformat);
-  // Start adapter
-  //hlp.tstOn();
-  //hlp.tstAutOn();
-  snailsAda = new SnailsAda();
-  frameRate(frames);
+  dialogMain.init();
 }
 //
 function draw() {
-  hlp.tst("Main|draw");
-  dialog.auto.event(dialog.enumDRAW, {});
+  hlp.tst("Main|draw ");
+  dialogMain.event(4);
 }
 //
 // Snails Adapter
 //
-class SnailsAda {
+class SnailsAdaFixNumberOfSnails {
   constructor () {
-    hlp.tst("SnailsAda|const");
-    this.snails = new Snails (cntRectX,cntRectY);
-    this.snailsLen = this.snails.arr.length;
-    hlp.tst("SnailsAda|const snailsLen",
-      this.snailsLen);
-    this.arr = [];
+    //hlp.tst("SnailsAda|const");
+    //this.snailcntmax = snailcntmax_;
+    this.isDraw0 = false;
+    //
+    this.makeNewSnails();
   }
-  noToString() {
-    let s = "SnailsAda Numbers";
-    s += " #snails="+this.snailsLen;
-    s += " #drawing="+this.arr.length;
-    return(s);
+  makeNewSnails() {
+    this.snailsObj = undefined;
+    this.snailsObj = 
+      new Snails(rectsize,cntrectx.val,cntrecty,addv);
+    this.snailsList = [];
+    this.snailsList = 
+      this.snailsObj.getSnailsAsBezier(snaillen.val);
+    this.snailsAdaList = [];
+    for (let i=0;i<this.snailsList.length;i++) {
+        let x = new SnailAda2(i,this.snailsList[i]);
+        this.snailsAdaList.push(x);
+    }
   }
   drawSnail() {
-    //hlp.tst("SnailsAda|drawSnail B ");
-    for(let i=0;i<this.arr.length;i++) {
-      this.arr[i].draw();
+    hlp.tst("SnailsAda|drawSnail",
+            this.snailsList.length);
+    let len = this.snailsList.length;
+    let h0 = 0;
+    for(let i=0;i<len;i++) {
+      hlp.tst("SnailsAda|drawSnail Index",i);
+      this.snailsAdaList[i].draw();
+      if(this.snailsAdaList[i].type==1) {h0+=1;}
     }
-    //hlp.tst("SnailsAda|drawSnail E ");
-  }
-  deleteSnail() {
-    //print("SnailsAda|deleteSnail B "+
-    //     "#arr="+this.arr.length);
-    for(let i=this.arr.length-1;i>=0;i--) {
-      if (!this.arr[i].drawing) {
-        //print("SnailsAda|deleteSnail delete no="+i);
-        this.arr.splice(i,1);
+    for (let i=h0;i<snailcnt.val;i++) {
+      //print("Index "+i);
+      let j = int(random(len));
+      for (let k=0; k<len;k++) {
+        let l = (j+k<len?j+k:j+k-len);
+        if (this.snailsAdaList[l].type==0) {
+          this.snailsAdaList[l].startSnail();
+          k = len;
+        }
       }
     }
-    //print("SnailsAda|deleteSnail E "+
-    //     "#arr="+this.arr.length);
-  }
-  makeSnail() {
-    //print("SnailsAda|makeSnail B "+
-    //     "#arr="+this.arr.length);
-    let i = int(random(this.snailsLen));
-    for(let j=0;j<this.snailsLen;j++) {
-      let k = i+j-
-          (i+j>=this.snailsLen
-           ?this.snailsLen
-           :0);
-      if(this.snails.arr[k].arr.length>0) {
-        let sAda = new SnailAda 
-                  (k,
-                   this.snails.getSnail(k));
-        sAda.color = sColor.getStepColor();
-        sAda.drawing = true;
-        this.arr.push(sAda);
-        //print("SnailsAda|makeSnail make no="+
-        //      this.arr.length);
-        let l = this.arr.length-1;
-        //print(this.arr[l].toString());
-        j = this.snailsLen;
+    let allType2 = true;
+    for(let i=0;i<len;i++) {
+      if(this.snailsAdaList[i].type==0) {
+        allType2 = false;
+      }
+      if(this.snailsAdaList[i].type==1) {
+        allType2 = false;
       }
     }
-    //print("SnailsAda|makeSnail E "+
-    //     "#arr="+this.arr.length);
+    if (allType2) {
+      let col;
+      if (this.isDraw0) {
+        //background(colors.getBgcolor());
+        background(bgcolor[1]);
+        this.makeNewSnails();
+        len = this.snailsList.length;
+        hlp.colNextLinecolor();
+        col = linecolor[1];
+        this.isDraw0 = false;
+      } else {
+        col = bgcolor[1];
+        this.isDraw0 = true;
+      }
+      for(let i=0;i<len;i++) {
+        this.snailsAdaList[i].reinit(col);
+      }
+    }
   }
 }
-class SnailAda {
-  constructor (no_,snail_) {
-    //print("SnailAda|constructor "+no_);
-    this.no = no_;
-    this.color = [0,0,0,255];
-    this.cycle0 = 0;
-    this.cycle1 = 0;
+class SnailAda2 {
+  constructor (nr_,path_) {
+    this.nr = nr_;
+    this.path = [];
+    for (let i=0;i<path_.length;i++) {
+      this.path.push(path_[i]);
+    }
+    this.part = this.path[0];
     this.tempo = 1;
-    this.snail = snail_;
-    //this.snailPart = this.snail.getSnailPart(0); 
-    this.snailPart = this.snail.arr[0];
-    //print("SnailPart="+this.snailPart);
+    this.type = 0;
+    this.colorDraw = linecolor[1];
   }
-  toString() {
-    let s = "SnailAda no="+this.no
-      +",color="+this.color
-      +","+this.snail.toString();
-    return(s);
+  reinit(color_) {
+    this.part = this.path[0];
+    this.tempo = 1;
+    this.type = 0;
+    this.colorDraw = color_.slice(0);    
+  }
+  startSnail() {
+    //print("Start Snail "+this.nr);
+    this.type=1;
+    this.cycle0=0;
+    this.cycle1=0;
+    this.drawHlp();
   }
   draw() {
-    //print("SnailAda|draw "+this.no+
-    //     ",snailPart: "+this.cycle1+
-    //     ",snailTop: "+this.cycle0+
-    //     "");
+    switch(this.type) {
+      case 0:
+      break;
+      case 1:
+        if(!this.drawHlp()) {
+          this.type = 2;
+        }
+      break;
+      case 2:
+      break;
+    }
+  }
+  drawHlp() {
     let t = 0;
     this.cycle0 += 1;
     if (this.cycle0<100) {
@@ -198,27 +226,25 @@ class SnailAda {
     } else {
       this.cycle0 = 0;
       this.cycle1 += 1;
-      if (this.cycle1<this.snail.arr.length) {
+      if (this.cycle1<this.path.length) {
         t = 0;
-        this.snailPart = this.snail.arr[this.cycle1];
-//          this.snail.getSnailPart(this.cycle1); 
-        //print("SnailPart="+this.snailPart);
-        //this.snailPart = this.snail[this.cycle1];
+        this.part = this.path[this.cycle1];
       } else {
         this.cycle1 = 0;
         this.drawing = false;
         return(false);
       }
     }
-    let x = bezierPoint(this.snailPart.aa.x,
-      this.snailPart.ac.x, this.snailPart.bc.x, 
-      this.snailPart.ba.x, t);
-    let y = bezierPoint(this.snailPart.aa.y, 
-      this.snailPart.ac.y, this.snailPart.bc.y, 
-      this.snailPart.ba.y, t);
-    stroke(this.color);
-    fill(this.color);
-    circle(x,y,sizeLine);
+    let x = bezierPoint(this.part[0][0],
+      this.part[1][0], this.part[2][0], 
+      this.part[3][0], t);
+    let y = bezierPoint(this.part[0][1],
+      this.part[1][1], this.part[2][1], 
+      this.part[3][1], t);
+    //stroke(this.colorDraw);
+    noStroke();
+    fill(this.colorDraw);
+    circle(x,y,linesize.val);
     return(true);
   }
 }
