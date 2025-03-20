@@ -1,92 +1,98 @@
 // Robert Gorr-Grohmann
 // 2025-01-01
-// Colection of helpful functions
-//   Calculating Draw Sizes
+// Collection of helpful functions
+//   Calculating global configuration variables
 //   Test handling
 //   Error handling
 class Help {
   constructor() {
     this.btst = false;
     this.btstAut = false;
-    //
-    this.dspFormatArray = 
-      [["A4-Portrait",22,15],
-      ["A4-Landscape",15,22],
-      ["Widescreen-P",19,12],
-      ["Widescreen-L",12,19],
-      ["Smartphone-P",16,9],
-      ["Smartphone-L",9,16]];
+    this.btstConf = false;
+//   color
+  this.colorArray = [
+  ["red",[255,0,0,255]],
+  ["green",[0,255,0,255]],
+  ["yellow",[0,255,255,255]],
+  ["petrol",[0,95,106,255]],
+  ["blue",[0,0,255,255]],
+  ["cyan",[0,255,255,255]],
+  ["magenta",[255,0,255,255]],
+  ["gold",[255,215,0,255]],
+  ["türkis",[64,224,208,255]],
+  ["silber",[192,192,192,255]],
+  ["white",[255,255,255,255]],
+  ["black",[0,0,0,255]]
+];
+//   format
+this.displayformatArray = [
+  ["A4-Portrait",15,22],
+  ["A4-Landscape",22,15],
+  ["Widescreen-P",12,19],
+  ["Widescreen-L",19,12],
+  ["Smartphone-P",9,16],
+  ["Smartphone-L",16,9]
+];
   }
 //
-//  Calculating Draw Sizes
+//  Check Configuration
 //
-  dspGetFormatNameArray() {
-    let ret = [];
-    for (let i=0;i<this.dspFormatArray.length;i++) {
-      ret.push(this.dspFormatArray[i][0]);
-    }
-    return (ret);
-  }
-  dspSetSizes1(w_,h_,f_) {
-    let w = w_-4;    
-    this.dspPossibleWidth = w;    
-    let h = h_-4;
-    this.dspPossibleHeight = h;
-    //
-    let ano = 0;
-    for (let i=0;
-         i<this.dspFormatArray.length;
-         i++) {
-      if (f_==this.dspFormatArray[i][0]) { ano = i;
+  chkConfFormat() {
+    let h0, h1, h2;
+    // Canvas width and height
+    let w0 = int(innerWidth-4);    
+    h0 = int(innerHeight-4);
+    let nr = 0;
+    for(let i=0;i<this.displayformatArray.length;i++) {
+      if (this.displayformatArray[i][0] 
+          ==displayformat[0]) {
+        nr=i;
       }
     }
-    this.dspFormatNr = ano;
-    //
-    let x = w 
-      / this.dspFormatArray[ano][2];
-    if (x*this.dspFormatArray[ano][1]>h) {
-      this.dspHeight = h;
-      x = h / this.dspFormatArray[ano][1];
-      this.dspWidth 
-        = int(x*this.dspFormatArray[ano][2]);
+    let x = w0 / this.displayformatArray[nr][1];
+    if (x*this.displayformatArray[nr][2]>h0) {
+      x = h0 / this.displayformatArray[nr][2];
+      canvaswidth = int(
+        x*this.displayformatArray[nr][1]);
+      canvasheight = h0;
     } else {
-      this.dspWidth = w;
-      this.dspHeight 
-        = int(x*this.dspFormatArray[ano][1]);
+      canvaswidth = w0;
+      canvasheight = int(
+        x*this.displayformatArray[nr][2]);
     }
-    //
-    this.tst("Possible W|H",
-      this.dspPossibleWidth,this.dspPossibleHeight);
-    this.tst("Display W|H",
-      this.dspWidth,this.dspHeight);
-    this.tst("Format",
-      this.dspFormatArray[this.dspFormatNr]);
   }
-  dspGetWidth() { return(this.dspWidth); }
-  dspGetHeight() { return(this.dspHeight); }
-  dspSetSizes2(l_,r_) {
-    let h = (this.dspWidth<this.dspHeight
-              ?this.dspWidth:this.dspHeight);
-    this.dspSizeRect = (r_<40?40:
-                     (r_>h/4?int(h/4):r_));
-    h = (l_<1?1:
-         (l_>this.dspSizeRect/6
-          ?this.dspSizeRect/6:l_));
-    this.dspSizeLine = int(h);
-    this.dspRectX 
-      = int(this.dspWidth/this.dspSizeRect);
-    this.dspRectY 
-      = int(this.dspHeight/this.dspSizeRect);
-    //
-    this.tst("Snail Linesize",this.dspSizeLine);
-    this.tst("Rect Size",this.dspSizeRect);
-    this.tst("Rect Cnt X|Y",
-      this.dspRectX,this.dspRectY);
+  XchkConfRectangle() {
+    let h0, h1, h2;
+    // Count rectangles in X and Y and the size
+    rectsize = int(canvaswidth/cntrectx.val-1);
+    cntrecty = int(canvasheight/rectsize);
+    this.tstConf("Count X|Y|Size",
+                 cntrectx.val,cntrecty,rectsize);
+    // Compute cntralization vector
+    h0 = (canvaswidth-(cntrectx*rectsize))/2;
+    h1 = (canvasheight-(cntrecty*rectsize))/2;
+    addv = createVector(h0,h1);
   }
-  dspGetSizeLine() { return(this.dspSizeLine); }
-  dspGetRectangleSize() { return(this.dspSizeRect); }
-  dspGetRectangleX() { return(this.dspRectX); }
-  dspGetRectangleY() { return(this.dspRectY); }
+  chkConfColor() {
+    let h0, h1, h2;
+    // Colors
+    for (let i=0;i<this.colorArray.length;i++) {
+      if (this.colorArray[i][0]==bgcolor[0]) {
+        let j = (i+1==this.colorArray.length?0:i+1);
+        linecolor = this.colorArray[j].slice(0);
+      }
+    }
+  }
+//
+// Colors
+//
+  colNextLinecolor() {
+    let i = int(random(this.colorArray.length));
+    if (this.colorArray[i][0]==bgcolor[0]) {
+      i = (i+1==this.colorArray.length?0:i+1);
+    }
+    linecolor = this.colorArray[i];
+  }
 //
 //  Test handling
 //
@@ -112,6 +118,17 @@ class Help {
   }
   tstAutOn() {this.btstAut = true;}
   tstAutOff() {this.btstAut = false;}
+  tstConf() {
+    if (this.btstConf) {
+      let s = "ConfTest "+arguments[0]+": ";
+      for (let i=1;i<arguments.length;i++) {
+        s += arguments[i]+"|";
+      }
+      print (s);
+    }
+  }
+  tstConfOn() {this.btstConf = true;}
+  tstConfOff() {this.btstConf = false;}
 //
 //  Error handling
 //
@@ -129,4 +146,21 @@ class Help {
     }
     print (s);
   }
+}
+//
+// Min-Max-Values
+//
+class MinMaxValue {
+  constructor(name_,default_,min_,max_) {
+    this.nam = name_;
+    this.val = int(default_);
+    this.min = min_;
+    this.max = max_;
+  }
+  set(value_){
+    this.val = (value_<this.min
+        ?this.min
+        :(value_>this.max?this.max:int(value_)));
+  }
+  tst(){return(this.nam+"="+this.val);}
 }
