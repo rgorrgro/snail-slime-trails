@@ -1,240 +1,120 @@
+//
 // Robert Gorr-Grohmann
 // October 2024
 //
 class Snails {
-  constructor(cntx_,cnty_) {
-    //print ( "Snails const S");
-    this.cntx = cntx_;
-    this.cnty = cnty_;
-    // Compute bezier offsets
-    let siz1 = 
-      (int(width/cntx_)<int(height/cnty_)?
-      int(width/cntx_):int(height/cnty_));
-    let siz2 = siz1/2;
-    let add1 = siz1*40/100;
-    let add2 = siz1*5/100;
-    // Offset to anchor points
-    this.ancX = [0,siz1/2,siz1,0,siz1,0,siz1/2,siz1];
-    this.ancY = [0,0,0,siz1/2,siz1/2,siz1,siz1,siz1];
-    // Offset to control points
-    this.ctrX = [add1,0,-add1,add1,-add1,add1,0,-add1];
-    this.ctrY = [add1,add1,add1,0,0,-add1,-add1,-add1];
+  constructor(size,cntx,cnty,addv) {
+    //print("Snails constructor start");
+    //print("Snails: new geometry");
+    this.geo = new Geometry(size,cntx,cnty,addv);
+	//print(this.geo.toString());
     //
-    this.siz1 = 
-      (int(width/cntx_)<int(height/cnty_)?
-      int(width/cntx_):int(height/cnty_));
-    //print ( "Snails|const cnx|cnty|siz=" + 
-    //  this.cntx + "|" + this.cnty + "|" + this.siz1);
-    this.siz2 = this.siz1/2;
-    this.add1 = this.siz1*40/100;
-    this.add2 = this.siz1*5/100;
-    //print ( "Snails: new paths" );
-    this.paths = new Paths(cntx_,cnty_);
-    //print ( "Snails: paths to snails array");
-    this.arr = [];
-    this.createSnailList(this.paths);
+    //print("Snails: control point coordinates");
+    //let add1 = size*40/100;    //30 - 40
+    //let add2 = size*5/100;
+    let add1 = size*30/100;
+    let add2 = size*5/100;
+    let ctrX = [add1,0,-add1,add1,-add1,add1,0,-add1];
+    let ctrY = [add1,add1,add1,0,0,-add1,-add1,-add1];
+    //let ctrX = [add1/2,0,    -add1,  add1,
+    //            -add1*2,add1/2,0,-add1];
+    //let ctrY = [add1,  add1/2,add1*2,0,
+    //            0,-add1*2,-add1*2,-add1*2];
+    this.geo.setControl(ctrX,ctrY);
+    //print(this.geo.toString());
+    //
+    //print ( "Snails: create list of snail pathes" );
+    this.list = 
+      this.createSnailPathesList(this.geo,cntx,cnty)
+	//print(this.toString());
     //print ( "Snails construction end");
   }
-  toStringSnail() {
-    let s = "Snails ";
-  }
-  length() {
-    return(this.arr.length);
-  }
-  getSnail(no_) {
-    return(this.arr[no_]);
-  }
-  createSnailList(paths_) {
-    for ( let i=0;i<this.paths.length();i++) {
-      //print("Snails|createSnailList "+i);
-      let path = this.paths.arr[i];
-      let snail = new Snail(path,this.siz1,
-                           this.ancX,this.ancY,
-                           this.ctrX,this.ctrY);
-      //print(snail.toString());
-      this.arr.push(snail);
+  createSnailPathesList(geo_,cntx_,cnty_) {
+    let ret = [];
+    let snailpathsmax = cntx_*cnty_*4;
+    let foundsnailpath = false;
+    for ( let i=0; i<snailpathsmax; i++) {
+      let snail = new Snail(geo_,cntx_,cnty_);
+      if (snail.empty) {
+        if (!foundsnailpath) {
+          hlp.err("SnailError: programm error nr 1.");
+        }
+        i = snailpathsmax;
+      } else {
+        foundsnailpath = true;
+        ret.push(snail);
+      }
     }
+    return(ret);
+  }
+  addPointCoordinates() {
+    for ( let i=0; i<this.list.length; i++) {
+      this.list[i].addPointCoordinates();
+    }
+  }
+  toString() {
+    let s = "Snails ";
+    for ( let i=0; i<this.list.length; i++) {
+      s += "\n";
+      s += this.list[i].toString(i);
+    }
+    return(s);
+  }
+  getSnailsAsBezier(snaillen_) {
+    let ret = [];
+    for (let i=0;i<this.list.length;i++) {
+      if (this.list[i].pairs.length>snaillen_) {
+        let bc = this.list[i].getSnailAsBezier();
+        ret.push(bc);
+      }
+    }
+    return(ret);
   }
 }
 class Snail {
-  constructor(path_,siz,ancX,ancY,ctrX,ctrY) {
-    this.arr = [];
-    for (let j=0;j<path_.arr.length;j++) {
-      let p1 = path_.arr[j].p1;
-      let p2 = path_.arr[j].p2;
-      let coord = new Coordinates(
-        createVector(
-          p1.x*siz+ancX[p1.z],
-          p1.y*siz+ancY[p1.z]),
-        createVector(
-          p1.x*siz+ancX[p1.z]+ctrX[p1.z],
-          p1.y*siz+ancY[p1.z]+ctrY[p1.z]),
-        createVector(
-          p2.x*siz+ancX[p2.z]+ctrX[p2.z],
-          p2.y*siz+ancY[p2.z]+ctrY[p2.z]),
-        createVector(
-          p2.x*siz+ancX[p2.z],
-          p2.y*siz+ancY[p2.z]),
-      );
-      this.arr.push(coord);
-    }
-  }
-  toString() {
-    let s = "Snail length=" + this.arr.length;
-    for (let j=0;j<this.arr.length;j++) {
-      s += " "+j+":"+this.arr[j]+", ";
-    }
-    return(s);
-  }
-  partToString() {
-    let s = "YSnailPart 0: ";
-    s += this.arr[0];
-    return(s);
-  }
-  XgetSnailPart(no_) {
-    return(this.arr[no_]);
-  }
-}
-//
-// Subclass of Snails
-//
-class Coordinates {
-  constructor(aa_,ac_,bc_,ba_) {
-    this.aa = aa_;
-    this.ac = ac_;
-    this.bc = bc_;
-    this.ba = ba_;
-  }
-  toString() {
-    let s = "";
-    s += " (" + this.aa.x + "," + this.aa.y + ")";
-    s += ",(" + this.ac.x + "," + this.ac.y + ")";
-    s += ",(" + this.bc.x + "," + this.bc.y + ")";
-    s += ",(" + this.ba.x + "," + this.ba.y + ")";
-    return(s);
-  }
-}
-//
-// All Paths according geometry
-//
-class Paths {
-  constructor(cntx_,cnty_) {
-    //print("Paths: begin");
-    //print("Paths: new geometry");
-    this.geo = new Geometry(cntx_,cnty_);
-    //print("Paths: geometry\n"+this.geo.toString());
-    this.arr = [];
-    let pathsmax = cntx_*cnty_*4;
-    let foundPath = false;
-    for ( let i=0; i<pathsmax; i++) {
-      //print("Paths: create path no=" + i);
-      let path = new Path(this.geo,cntx_,cnty_);
-      if (path.empty) {
-        if (!foundPath) {
-          //print("PF|Paths|Could not create path.");
-        }
-        i = pathsmax;
-      } else {
-        foundPath = true;
-        this.arr.push(path);
-      }
-    }
-    //print("Paths: end");    
-  }
-  length() { return(this.arr.length); }
-  getPath(no_) { return(this.arr[no_]); }
-  toString(b_){
-    let s = "";
-    for (let i=0;i<this.arr.length-1;i++) {
-      s += "path no=" + i + ": " + 
-        this.arr[i].toString(b_);
-    }
-    return(s);
-  }
-}
-//
-// One Paths according geometry
-//
-class Path {
   constructor(geo_,cntx_,cnty_) {
-    //print ( "Path: begin");
     this.empty = true;
-    this.arr = [];
+    this.pairs = [];
     let p = undefined;
     let p1 = undefined;
     let p2 = undefined;
     p1 = geo_.getNextFreePoint();
     if (p1==undefined) { return; }
-    //print ("Path|p1: " + p1.toString());
     let endfor = cntx_*cnty_*4;
     for (let i=0;i<endfor;i++){
-      //print("if p1 not free");
       if (!p1.free) {
-        //print("then p1 not free");
-        //print("if no closed path");
-        if (this.arr.length==0) {
-          //print("PF|Path|p1 unfree and arr no path");
+        if (this.pairs.length==0) {
+          hlp.err("SnailError: programm error nr 2.");
           return;
         } else {
-          let p = this.arr[0].p1;
+          let p = this.pairs[0].p1;
           if (!p1.equals(p)) { 
-            //print("PF|Path|p1 unfree and not first path point");
-            //print("p: " + p.toString(true));
-            //print("p1: " + p1.toString(true));
-            //print("p2: " + p2.toString(true));
-            //print("geo:\n" + geo_.toString(true));
-            //print("path:\n" + this.toString(true));
+            hlp.err("SnailError: programm error nr 3.");
           } else {
-            //print("else is closed path");
-            //print("path ready");
             this.empty = false;
           }
           return;
         }
       } else {
-        //print("else p1 free");
         p1.free = false;
-        //print("search free point in rect of p1");
         p2 = geo_.getNextFreeRectPoint(p1);
-        //print("if no p2 found");
         if (p2==undefined) {
-          //print("then no p2 found");
-          //print("PF|Path|no free rect point");
           return;
         }
-        //print("else p2 found");
-        //print ("Path|p2: " + p2.toString());
         p2.free = false;
-        //print("push new pair to path");
         let pair = new PointPair (p1, p2);
-        this.arr.push(pair); 
-        //print("if p2 no edge");
+        this.pairs.push(pair); 
         if (!p2.edge) {
-          //print("then p2 no edge");
-          //print("p1 <- neighbour of p2");
           p1 = geo_.getNeighbour(p2);
-          //print ("Path|p1: " + p1.toString());
         } else {
-          //print("if p2 edge");
-          p = this.arr[0].p1;
-          //print("if firstp of path is edge");
+          p = this.pairs[0].p1;
           if (p.edge) {
-            //print("then firstp of path is edge");
-            //print("path ready");
             this.empty = false;
             return;
           } else {
-            //print("else firstp of path is no edge");
-            //print("reoder path");
-            //print("reorder 1: " + this.toString());
             this.reordering();
-            //print("reorder 2: " + this.toString());
-            //print("reorder 3: p2 <- lastp of path");
-            p2 = this.arr[this.arr.length-1].p2;
-            //print ("Path|p2: " + p2.toString());
-            //print("reorder 4: p1 <- neighbour of p2");
+            p2 = this.pairs[this.pairs.length-1].p2;
             p1 = geo_.getNeighbour(p2);          
-            //print ("Path|p1: " + p1.toString());
           }
         }
       }
@@ -242,58 +122,99 @@ class Path {
   }
   reordering() {
     let arr2 = [];
-    for (let i=this.arr.length-1;i>=0;i--) {
-      let pair = this.arr[i];
+    for (let i=this.pairs.length-1;i>=0;i--) {
+      let pair = this.pairs[i];
       let h = pair.p1;
       pair.p1 = pair.p2;
       pair.p2 = h;
       arr2.push(pair);
     }
-    this.arr = arr2;
+    this.pairs = arr2;
   }
-  toString(b_) {
-    let s = "len=" + this.arr.length;
-    for (let i=0;i<this.arr.length;i++) {
-      s += "\n" + this.arr[i].toString(b_);
+  toString(i_) {
+    let s = "Snail"+i_;
+    s += ": pairslen=" + this.pairs.length;
+    for (let i=0;i<this.pairs.length;i++) {
+      s += ",P"+i+":" + this.pairs[i].toString();
     }
     return (s);
+  }
+  getSnailAsBezier() {
+    let ret = [];
+    for (let i=0;i<this.pairs.length;i++) {
+      let bc = this.pairs[i].getBezierCoord();
+      ret.push(bc);
+    }
+    return(ret);
   }
 }
 //
 // Geometry
+//   rectangles of equal size, each with 8 points
+//   neighbour rectangles have 3 (sometimes 1) point
+//   in common
 //
 class Geometry {
-  constructor(cntx_,cnty_) {
+  constructor(size_,cntx_,cnty_,addv_) {
+    this.size = size_;
     this.cntx = cntx_;
     this.cnty = cnty_;
-    this.arr = []
-    for (let ix=0;ix<this.cntx;ix++) {
-      let y = [];
-      for (let iy=0;iy<this.cnty;iy++) {
-        let z = [];
-        for (let iz=0;iz<8;iz++) {
-          let p = new Point(ix,iy,iz,cntx_,cnty_);
-          z.push(p);
+    this.addv = addv_;
+    // Create 3-dim array of points
+    this.pts = []
+    for (let x=0;x<cntx_;x++) {
+      let h0 = [];
+      for (let y=0;y<cnty_;y++) {
+        let h1 = [];
+        for (let z=0;z<8;z++) {
+          let p = new Point(x,y,z,cntx_,cnty_,addv_);
+          h1.push(p);
         }
-        y.push(z);
+        h0.push(h1);
       }
-      this.arr.push(y);
+      this.pts.push(h0);
+    }
+    // Add coordinates
+    let ancX = 
+        [0,size_/2,size_,0,size_,0,size_/2,size_];
+    let ancY = 
+        [0,0,0,size_/2,size_/2,size_,size_,size_];
+    for (let x=0;x<cntx_;x++) {
+      for (let y=0;y<cnty_;y++) {
+        for (let z=0;z<8;z++) {
+          let p = this.pts[x][y][z];
+          let v = createVector(
+            x*size_+ancX[z],y*size_+ancY[z]);
+          v.add(addv);
+          p.setAnchor(v);
+        }
+      }
+    }
+  }
+  setControl(ctrX_,ctrY_) {	  
+    for (let x=0;x<this.cntx;x++) {
+      for (let y=0;y<this.cnty;y++) {
+        for (let z=0;z<8;z++) {
+          let p = this.pts[x][y][z];
+          let v = createVector(
+            ctrX_[z],ctrY_[z]);
+          //v.add(addv);
+          p.setControl(v);
+        }
+      }
     }
   }
   setFree(p_,bool_) {
-    this.arr[p_.x][p_.y][p_.z].free = bool_;
+    this.geopts[p_.x][p_.y][p_.z].free = bool_;
   }
   getFree(p_) {
-    return(this.arr[p_.x][p_.y][p_.z].free);
-  }
-  getEdge(pt_) {
-    return(this.arr[p_.x][p_.y][p_.z].edge);
+    return(this.geopts[p_.x][p_.y][p_.z].free);
   }
   getNextFreePoint() {
-    for (let ix=0;ix<this.cntx;ix++) {
-      for (let iy=0;iy<this.cnty;iy++) {
-        for (let iz=0;iz<8;iz++) {
-          let p = this.arr[ix][iy][iz];
+    for (let x=0;x<this.cntx;x++) {
+      for (let y=0;y<this.cnty;y++) {
+        for (let z=0;z<8;z++) {
+          let p = this.pts[x][y][z];
           if (p.free) { return (p); }
         }
       }
@@ -301,30 +222,28 @@ class Geometry {
     return (undefined);
   }
   getNextFreeRectPoint(p_) {
-    let ix = p_.x;
-    let iy = p_.y;
+    let x = p_.x;
+    let y = p_.y;
     let j = int(random(8));
     for ( let i=0;i<8;i++) {
       let k = (i+j>=8?i+j-8:i+j);
-      let p = this.arr[ix][iy][k];
+      let p = this.pts[x][y][k];
       if (p.free) { return (p); }
     }
     return (undefined);
   }
   getNeighbour(p_) {
-    //print(p_.toString())
-    let p = this.arr[p_.neighbourx]
+    let p = this.pts[p_.neighbourx]
            [p_.neighboury][p_.neighbourz];
-    //print(p.toString());
     return(p);
   }
-  toString(b_) {
+  toString() {
     let s = "Geometry:\n";
-    for (let ix=0;ix<this.cntx;ix++) {
-      for (let iy=0;iy<this.cnty;iy++) {
-        for (let iz=0;iz<8;iz++) {
-          let p = this.arr[ix][iy][iz];
-          s += p.toString(b_) + "\n";
+    for (let x=0;x<this.cntx;x++) {
+      for (let y=0;y<this.cnty;y++) {
+        for (let z=0;z<8;z++) {
+          let p = this.pts[x][y][z];
+          s += p.toString() + "\n";
         }
       }
     }
@@ -333,20 +252,41 @@ class Geometry {
   }
 }
 //
-// Points
+// Point pairs
+//   are two points of a rectangle wich define
+//   a part of a snails path
 //
 class PointPair {
   constructor(p1_,p2_) {
     this.p1 = p1_;
     this.p2 = p2_;
   }
-  toString(b_) {
+  toString() {
     let s = "";
-    s += "  " + this.p1.toString(b_) + ",";
-    s += this.p2.toString(b_);
+    s += "\n(A,("+this.p1.rectCoordToString()+"),";
+    s += "("+this.p1.pixelAnchorCoordToString()+"),";
+    s += "("+this.p1.pixelControlCoordToString()+")),";
+    s += "(B,("+this.p2.rectCoordToString()+"),";
+    s += "("+this.p2.pixelAnchorCoordToString()+"),";
+    s += "("+this.p2.pixelControlCoordToString()+")),";
     return(s);
   }
+  getBezierCoord() {
+    let v0 = [this.p1.anchor.x,this.p1.anchor.y];
+    let v1 = [this.p1.control.x,this.p1.control.y];
+    let v2 = [this.p2.control.x,this.p2.control.y];
+    let v3 = [this.p2.anchor.x,this.p2.anchor.y];
+    let ret = [v0,v1,v2,v3];
+    return(ret);
+  }
 }
+//
+// Point
+//   every geometry point with its coordiates,
+//     and the info if it is an edge 
+//     and if it is free for planning
+//     and the coordinates of its neighbour point
+//
 class Point {
   constructor(x_,y_,z_,cntx_,cnty_) {
     this.x = x_;
@@ -377,28 +317,48 @@ class Point {
       this.neighbourz = addz[z_];
     }
   }
+  setAnchor(v_) {this.anchor = v_;}
+  setControl(v_) {
+    this.control = this.anchor.copy();
+    this.control.add(v_);
+  }
   equals(p_) {
-    /*let ret = true;
-    if (!this.x==p_.x) {ret = false; }
-    if (!this.y==p_.y) {ret = false; }
-    if (!this.z==p_.z) {ret = false; }*/
     return ((this.x==p_.x)&&
             (this.y==p_.y)&&
             (this.z==p_.z))
   }
-  toString(b_) {
-    let s = "P(" + this.x;
-    s += "," + this.y;
-    s += "," + this.z;
-    if (b_) {
-      s += "),f" + this.free;
-      s += ",e" + this.edge;
-      if (!this.edge) {
-        s += ",Nx" + this.neighbourx;
-        s += ",Ny" + this.neighboury;      
-        s += ",Nz" + this.neighbourz;      
-      }
-    } else { s += ")"; }
+  coordToString() {
+    return(""+this.x+","+this.y+","+this.z);
+  }
+  rectCoordToString() {
+    return(""+this.x+","+this.y+","+this.z);
+  }
+  pixelAnchorCoordToString() {
+    return(""+this.anchor.x+","+this.anchor.y);
+  }
+  pixelControlCoordToString() {
+    return(""+this.control.x+","+this.control.y);
+  }
+  coordToString() {
+    return(""+this.x+","+this.y+","+this.z);
+  }
+  toString() {
+    let s = "P("+this.x;
+    s += ","+this.y;
+    s += ","+this.z+")";
+    s += ",Anc("+this.anchor.x+","+this.anchor.y;
+    s += ")";      
+    s += ",Free="+this.free;
+    s += ",Edge="+this.edge;
+    if (!this.edge) {
+      s += ",NP("+this.neighbourx;
+      s += ","+this.neighboury;      
+      s += ","+this.neighbourz+")";      
+    }
+	if (!(this.control==undefined)) {
+      s += ",Ctr("+this.control.x+","+this.control.y;  
+      s += ")";      
+	}
     return (s);
   }
 }
