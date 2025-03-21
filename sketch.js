@@ -50,7 +50,7 @@ function setup() {
   hlp.tstConf("Display W|H",canvaswidth,canvasheight);
   // Rectangles numbers in X and Y and size
   rectsizemin = 15;
-  cntrectx = new MinMaxValue("RectCntX",8,2,
+  cntrectx = new MinMaxValue("RectCntX",5,2,
                   int(canvaswidth/rectsizemin-1));
   rectsize = int(canvaswidth/cntrectx.val-1);
   cntrecty = int(canvasheight/rectsize);
