@@ -3,10 +3,10 @@
 // October 2024
 //
 class Snails {
-  constructor(size,cntx,cnty,addv) {
+  constructor(size,cntx,cnty,centralvector) {
     //print("Snails constructor start");
     //print("Snails: new geometry");
-    this.geo = new Geometry(size,cntx,cnty,addv);
+    this.geo = new Geometry(size,cntx,cnty,centralvector);
 	//print(this.geo.toString());
     //
     //print("Snails: control point coordinates");
@@ -155,11 +155,11 @@ class Snail {
 //   in common
 //
 class Geometry {
-  constructor(size_,cntx_,cnty_,addv_) {
+  constructor(size_,cntx_,cnty_,centralvector_) {
     this.size = size_;
     this.cntx = cntx_;
     this.cnty = cnty_;
-    this.addv = addv_;
+    this.centralvector = centralvector_;
     // Create 3-dim array of points
     this.pts = []
     for (let x=0;x<cntx_;x++) {
@@ -167,7 +167,7 @@ class Geometry {
       for (let y=0;y<cnty_;y++) {
         let h1 = [];
         for (let z=0;z<8;z++) {
-          let p = new Point(x,y,z,cntx_,cnty_,addv_);
+          let p = new Point(x,y,z,cntx_,cnty_,centralvector_);
           h1.push(p);
         }
         h0.push(h1);
@@ -185,7 +185,7 @@ class Geometry {
           let p = this.pts[x][y][z];
           let v = createVector(
             x*size_+ancX[z],y*size_+ancY[z]);
-          v.add(addv);
+          v.add(centralvector);
           p.setAnchor(v);
         }
       }
@@ -198,7 +198,7 @@ class Geometry {
           let p = this.pts[x][y][z];
           let v = createVector(
             ctrX_[z],ctrY_[z]);
-          //v.add(addv);
+          //v.add(centralvector);
           p.setControl(v);
         }
       }
