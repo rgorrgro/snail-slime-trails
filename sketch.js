@@ -20,7 +20,7 @@ let displayformat;
 //let canvaswidthmin = 200;
 let canvaswidth, canvasheight;
 //   rectangle number and size 
-let cntrectx, cntrecty;
+let rectcntx, rectcnty;
 let rectsizemin;
 let rectsize;
 //   line size
@@ -28,59 +28,42 @@ let linesize;
 //   colors
 let bgcolor, linecolor;
 //   snail numbers and length
-let snailcnt, snaillen;
+let snailtype, snailmaxcnt, snailminlen;
 // etc
-let addv;
-let snailtype = "All";
-let snailtypeArray = ["All","One"];
+let centralvector;
+let cyclesperrect = 100;
+//let snailtype = "All";
+//let snailtypeArray = ["All","One"];
 let colors;
 //
 function setup() {
   hlp = new Help();
   hlp.tstOff();
   hlp.tstAutOff();
-  hlp.tstConfOff();
-  // Canvas width and height
+  hlp.tstConfOn();
   canvaswidth = innerWidth;
   canvasheight = innerHeight;
-  displayformat = hlp.displayformatArray[4];
-  hlp.chkConfFormat();
-  hlp.tstConf("Format|X|Y",displayformat[0],
-           displayformat[1],displayformat[2]);
-  hlp.tstConf("Display W|H",canvaswidth,canvasheight);
-  // Rectangles numbers in X and Y and size
+  //displayformat = hlp.displayformatArray[4];
+  displayformat = 
+    new RadioValue("displayformat",
+                   4,hlp.displayformatArray);
   rectsizemin = 15;
-  cntrectx = new MinMaxValue("RectCntX",5,2,
-                  int(canvaswidth/rectsizemin-1));
-  rectsize = int(canvaswidth/cntrectx.val-1);
-  cntrecty = int(canvasheight/rectsize);
-  hlp.tstConf("Count X|Y|Size",
-               cntrectx.val,cntrecty,rectsize);
-  // Centralization vector
-  addv = createVector(
-    (canvaswidth-(cntrectx*rectsize))/2,
-    (canvasheight-(cntrecty*rectsize))/2);
-  // Linesize
-  linesize = new MinMaxValue("Linesize",
-                  int(rectsize/5),
-                  1,int(rectsize/4));
-  hlp.tstConf("Linesize",linesize.val);
-  //
-  snailcnt = new MinMaxValue("SnailMaxCnt",5,1,20);
-  snaillen = new MinMaxValue("SnailMinLen",3,1,5);
-  hlp.tstConf("Snail MaxCnt|MinLen",
-               snailcnt.val,snaillen.val);
+  // Check and set
+  //   Canvas width and height
+  //   Rectangles numbers in X and Y and size
+  //   Linesize
+  //   Centralization vector
+  hlp.chkDisplayformatAndGeometry();
+  // Snail params
+  hlp.chkSnailparams();
   // Colors
-  bgcolor = hlp.colorArray[6];
-  linecolor = hlp.colorArray[7];
-  hlp.chkConfColor();
-  hlp.tstConf("Color BG|Line",bgcolor,linecolor);
+  hlp.chkColors(true);
   colorMode(RGB, 255);
-  background(bgcolor[1]);
-  //
-  frames   = new MinMaxValue("Frames",24,1,24);
+  background(bgcolor.val[1]);
+  // Frames
+  hlp.chkFrames();
+  hlp.tstConf("That´s all!")
   frameRate(frames.val);
-  hlp.tstConfOff();
   // Canvas
   canvas = createCanvas(canvaswidth,canvasheight);
   // Dialog
@@ -91,7 +74,7 @@ function setup() {
         SnailsAdaFixNumberOfSnails();
       hlp.tst("S=Init,E=Run,NS=Running");
       //background(colors.getBgcolor());
-      background(bgcolor[1]);
+      background(bgcolor.val[1]);
     },
     //S=Running,E=Draw,NS=Running
     (p1_,p2_) => {
@@ -111,73 +94,124 @@ function draw() {
 //
 class SnailsAdaFixNumberOfSnails {
   constructor () {
-    //hlp.tst("SnailsAda|const");
-    //this.snailcntmax = snailcntmax_;
-    this.isDraw0 = false;
-    //
     this.makeNewSnails();
   }
   makeNewSnails() {
     this.snailsObj = undefined;
     this.snailsObj = 
-      new Snails(rectsize,cntrectx.val,cntrecty,addv);
+      new Snails(rectsize,rectcntx.val,
+                 rectcnty,centralvector);
     this.snailsList = [];
     this.snailsList = 
-      this.snailsObj.getSnailsAsBezier(snaillen.val);
+      this.snailsObj.getSnailsAsBezier(
+        snailminlen.val);
     this.snailsAdaList = [];
+    this.timemaxlen = 0;
+    this.timemeanlen = 0;
     for (let i=0;i<this.snailsList.length;i++) {
-        let x = new SnailAda2(i,this.snailsList[i]);
-        this.snailsAdaList.push(x);
+      let x = new SnailAda2(i,this.snailsList[i]);
+      if (this.timemaxlen<=this.snailsList[i].length) {
+        this.timemaxlen = this.snailsList[i].length;
+      }
+      this.timemeanlen += this.snailsList[i].length;
+      this.snailsAdaList.push(x);
     }
+    this.timemeanlen = 
+      this.timemeanlen/this.snailsList.length;
+    //this.starttime(maxlen,meanlen);
+    this.drawstate = 0;
   }
   drawSnail() {
-    hlp.tst("SnailsAda|drawSnail",
-            this.snailsList.length);
-    let len = this.snailsList.length;
-    let h0 = 0;
-    for(let i=0;i<len;i++) {
-      hlp.tst("SnailsAda|drawSnail Index",i);
+    if (this.drawstate==0) {
+      this.drawstart();
+      this.drawstate = 1;
+    }
+    if (this.drawstate==2) {
+      this.drawend();
+      this.drawstart();
+      for(let i=0;i<this.snailsList.length;i++) {
+        this.snailsAdaList[i].reinit(bgcolor.val[1]);
+      }
+      this.drawstate = 3;
+    }
+    if (this.drawstate==4) {
+      this.drawend();
+      background(bgcolor.val[1]);
+      hlp.colNextLinecolor();
+      this.makeNewSnails();
+      this.drawstate = 0;
+      return;
+    }
+    let cnt = [0,0,0,0,0];
+    for(let i=0;i<this.snailsList.length;i++) {
       this.snailsAdaList[i].draw();
-      if(this.snailsAdaList[i].type==1) {h0+=1;}
+      cnt[this.snailsAdaList[i].type] += 1;
     }
-    for (let i=h0;i<snailcnt.val;i++) {
-      //print("Index "+i);
-      let j = int(random(len));
-      for (let k=0; k<len;k++) {
-        let l = (j+k<len?j+k:j+k-len);
-        if (this.snailsAdaList[l].type==0) {
-          this.snailsAdaList[l].startSnail();
-          k = len;
+    //
+    if (this.drawstate==1) {
+      if (cnt[0]>0) {
+        if (cnt[1]<snailmaxcnt.val) {
+          let j = int(random(this.snailsList.length));
+          for (let k=0; k<this.snailsList.length;k++) {
+            let l = (j+k<this.snailsList.length
+                     ?j+k
+                     :j+k-this.snailsList.length);
+            if (this.snailsAdaList[l].type==0) {
+              this.snailsAdaList[l].startSnail(1);
+              k = this.snailsList.length;
+            }
+          }
         }
-      }
-    }
-    let allType2 = true;
-    for(let i=0;i<len;i++) {
-      if(this.snailsAdaList[i].type==0) {
-        allType2 = false;
-      }
-      if(this.snailsAdaList[i].type==1) {
-        allType2 = false;
-      }
-    }
-    if (allType2) {
-      let col;
-      if (this.isDraw0) {
-        //background(colors.getBgcolor());
-        background(bgcolor[1]);
-        this.makeNewSnails();
-        len = this.snailsList.length;
-        hlp.colNextLinecolor();
-        col = linecolor[1];
-        this.isDraw0 = false;
       } else {
-        col = bgcolor[1];
-        this.isDraw0 = true;
-      }
-      for(let i=0;i<len;i++) {
-        this.snailsAdaList[i].reinit(col);
+        if (cnt[1]==0) {this.drawstate = 2;}      
       }
     }
+    //
+    if (this.drawstate==3) {
+      if (cnt[2]>0) {
+        if (cnt[3]<snailmaxcnt.val) {
+          let j = int(random(this.snailsList.length));
+          for (let k=0; k<this.snailsList.length;k++) {
+            let l = (j+k<this.snailsList.length
+                     ?j+k
+                     :j+k-this.snailsList.length);
+            if (this.snailsAdaList[l].type==2) {
+              this.snailsAdaList[l].startSnail(3);
+              k = this.snailsList.length;
+            }
+          }
+        }
+      } else {
+        if (cnt[3]==0) {this.drawstate = 4;}      
+      }
+    }
+  }
+  drawstart () {
+    let d = new Date();
+    this.timestart = d.getTime();
+    this.timetarget = 150; 
+    hlp.tstRuntime("timetarget",this.timetarget);
+    hlp.tstRuntime("timemaxlen",this.timemaxlen);
+    hlp.tstRuntime("timemeanlen",this.timemeanlen);
+    this.timecntsnails = this.snailsList.length;
+    hlp.tstRuntime("timecntsnails",
+                     this.snailsList.length);
+    //}
+  }
+  drawend () {
+    let d = new Date();
+    this.timeend = d.getTime();
+    this.timedelta = 
+      (this.timeend-this.timestart)/1000; 
+    hlp.tstRuntime("timedelta",this.timedelta);
+    hlp.tstRuntime("cyclesperrect1",cyclesperrect);
+    let x = this.timetarget/this.timedelta;
+    cyclesperrect *= x;
+    cyclesperrect = (cyclesperrect<25?25
+                     :(cyclesperrect>250?250
+                       :int(cyclesperrect)));
+    hlp.tstRuntime("cyclesperrect2",cyclesperrect);
+    hlp.tstRuntimeOff();
   }
 }
 class SnailAda2 {
@@ -195,12 +229,10 @@ class SnailAda2 {
   reinit(color_) {
     this.part = this.path[0];
     this.tempo = 1;
-    this.type = 0;
     this.colorDraw = color_.slice(0);    
   }
-  startSnail() {
-    //print("Start Snail "+this.nr);
-    this.type=1;
+  startSnail(state_) {
+    this.type=state_;
     this.cycle0=0;
     this.cycle1=0;
     this.drawHlp();
@@ -216,13 +248,18 @@ class SnailAda2 {
       break;
       case 2:
       break;
+      case 3:
+        if(!this.drawHlp()) {
+          this.type = 4;
+        }
+      break;
     }
   }
   drawHlp() {
     let t = 0;
     this.cycle0 += 1;
-    if (this.cycle0<100) {
-      t = (this.tempo*this.cycle0)/100
+    if (this.cycle0<cyclesperrect) {
+      t = (this.tempo*this.cycle0)/cyclesperrect;
     } else {
       this.cycle0 = 0;
       this.cycle1 += 1;
