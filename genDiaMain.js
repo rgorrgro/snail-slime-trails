@@ -56,10 +56,10 @@ class DialogMain {
       () => {
         // Menue INIT
         let bRun1 = this.makeButton("RUN",
-                    50,100,"yellow",() => {
+                    50,50,"yellow",() => {
                     this.event(eRU);});
         let bConf1 = this.makeButton("CONFIG",
-                    150,100,"yellow",() => {
+                    150,50,"yellow",() => {
                     this.event(eCB);});
         this.divINIT = createDiv();
         this.divINIT.child(bRun1);
@@ -67,13 +67,13 @@ class DialogMain {
         this.divINIT.style("display","none");
         //
         let bRun2 = this.makeButton("RUN",
-                    50,100,"yellow",() => {
+                    50,50,"yellow",() => {
                     this.event(eRU);});
         let bSave = this.makeButton("SAVE",
-                    150,100,"yellow",() => {
+                    150,50,"yellow",() => {
                     this.event(eSA);});
         let bHalt = this.makeButton("HALT",
-                    250,100,"yellow",() => {
+                    250,50,"yellow",() => {
                     this.event(eHA);});
         this.divPAUSING = createDiv();
         this.divPAUSING.child(bRun2);
@@ -90,7 +90,7 @@ class DialogMain {
         });
         this.divINIT.style("display","none");
         this.makeCanvas();
-        background(bgcolor[1]);
+        background(bgcolor.val[1]);
         this.initRunRunning();
       }, 
     // 3
@@ -108,12 +108,10 @@ class DialogMain {
     // 6
       () => {
         //work.save("mysketch");
-        //this.divPAUSING.style("display","none"); 
       },
     // 7
       () => {
         this.divPAUSING.style("display","none"); 
-        //this.runningStopInit();
       },
     // 8
       () => {
@@ -128,7 +126,7 @@ class DialogMain {
       }, 
     // 10
       ()=>{
-        background(bgcolor[1]);
+        background(bgcolor.val[1]);
       } 
     ];
   }
@@ -154,17 +152,9 @@ class DialogMain {
   //  Help functions
   //
   makeCanvas() {
-    //hlp.tstConf("DialogMain frames",frames);
-    hlp.tstConf("DialogMain");
-    hlp.tstConf("  "+frames.tst());
-    hlp.tstConf("  format",displayformat);
-    hlp.tstConf("  width|height",canvaswidth,canvasheight);
-    hlp.tstConf("  rectsize|cntrectx|cntrecty",
-            rectsize,cntrectx.val,cntrecty);
-    //hlp.tstConf("  sizeLine",sizeline);
-    hlp.tstConf("  "+linesize.tst());
     frameRate(frames.val);
-    canvas = createCanvas(canvaswidth,canvasheight);
+    canvas = 
+      createCanvas(canvaswidth,canvasheight);
   }
   makeButton(text_,x_,y_,color_,func_) {
     let button = createButton(text_);
