@@ -9,51 +9,41 @@
 class DialogConf {
   constructor(caller_) {
     this.cfgArray = [];
-    this.cfgArray.push(["radio","format",
-      () => {return(displayformat);},
-      (p_) => {displayformat=p_;
-              hlp.chkConfFormat();
-              hlp.chkConfRectangle();},
-      hlp.displayformatArray]);
-    this.cfgArray.push(["slider","cntrectx",
-      () => {return(cntrectx.val);},
-      (p_) => {cntrectx.set(p_);
-              hlp.chkConfRectangle();},
-      cntrectx.min,cntrectx.max]);   
-    this.cfgArray.push(["onlyview","cntrecty",
-      () => {return(cntrecty);}]);   
-    this.cfgArray.push(["onlyview","sizerect",
+    this.cfgArray.push(["radio1",displayformat,
+      () => {return(displayformat.val[0]);},
+      (p_) => {displayformat.set(p_);
+              hlp.chkDisplayformatAndGeometry();}]);
+    this.cfgArray.push(["slider1",rectcntx,
+      () => {return(rectcntx.val);},
+      (p_) => {rectcntx.set(p_);
+              hlp.chkRectcntx(false);}]);
+    this.cfgArray.push(["onlyview","rectcnty",
+      () => {return(rectcnty);}]);   
+    this.cfgArray.push(["onlyview","rectsize",
       () => {return(rectsize);}]);
-    this.cfgArray.push(["slider","linesize",
+    this.cfgArray.push(["slider1",linesize,
       () => {return(linesize.val);},
-      (p_) => {linesize.set(p_);;},
-      linesize.min,linesize.max]);    
-    this.cfgArray.push(["radio","bgcolor",
-      () => {return(bgcolor);},
-      (p_) => {bgcolor=p_;
-              hlp.chkConfColor();},
-      hlp.colorArray]);
-    this.cfgArray.push(["radio","snailtype",
-      () => {return(snailtype);},
-      (p_) => {snailtype=p_[0];},
-      snailtypeArray]);
-    this.cfgArray.push(["slider","snailcnt",
-      () => {return(snailcnt.val);},
-      (p_) => {snailcnt.set(p_);},
-      snailcnt.min,snailcnt.max]);
-    this.cfgArray.push(["slider","snaillen",
-      () => {return(snaillen.val);},
-      (p_) => {snaillen.set(p_);},
-      snaillen.min,snaillen.max]);
-/*    this.cfgArray.push(["slider","frames",
-      () => {return(frames);},
-      (p_) => {frames=p_;
-              hlp.chkConfFrames();},
-      framesmin,framesmax]);*/
-      this.cfgArray.push(["slider","frames",
+      (p_) => {linesize.set(p_);
+               hlp.chkLinesize(false);}]);    
+    this.cfgArray.push(["radio1",bgcolor,
+      () => {return(bgcolor.val[0]);},
+      (p_) => {bgcolor.set(p_);
+              hlp.chkColors(false);}]);
+    this.cfgArray.push(["radio1",snailtype,
+      () => {return(snailtype.val[0]);},
+      (p_) => {snailtype.set(p_);}]);
+    this.cfgArray.push(["slider1",snailmaxcnt,
+      () => {return(snailmaxcnt.val);},
+      (p_) => {snailmaxcnt.set(p_);
+              hlp.chkSnailparams();}]);
+    this.cfgArray.push(["slider1",snailminlen,
+      () => {return(snailminlen.val);},
+      (p_) => {snailminlen.set(p_);
+               hlp.chkSnailparams();}]);
+    this.cfgArray.push(["slider1",frames,
       () => {return(frames.val);},
-      (p_) => {frames.set(p_);},
-      frames.min,frames.max]);
+      (p_) => {frames.set(p_);
+              hlp.chkFrames();}]);
     //
     this.aname = "DiaConf";
     this.caller = caller_;
@@ -115,11 +105,14 @@ class DialogConf {
         this.divShowModify.style("display","none");
         this.divShowModify = undefined;
         let x = this.xType.value();
-        if(this.cfgArray[this.elenr][0]=="radio") {
-          x = this.cfgArray[this.elenr][4][x];
+        let arr = this.cfgArray[this.elenr];
+        if(arr[0]=="radio") {
+          x = arr[4][x];
         }
-        this.cfgArray[this.elenr][3](x);
-        //this.checkConfig();
+        if(arr[0]=="radio1") {
+          x = arr[1].arr[x];
+        }
+        arr[3](x);
         this.divShowOverview = createDiv();
         this.makeShowOverview();
         this.divShowOverview.style("display","block");
@@ -153,27 +146,29 @@ class DialogConf {
     this.event(0);
   }
   //
-  // Check Configuration
-  //
-  XcheckConfig() {
-    hlp.chkConfig();
-    hlp.tstConfOn();
-    hlp.tstConfig();
-    hlp.tstConfOff();
-  }
-  //
   //  Modify Menue
   //
   makeShowModify() {
     let nr = this.elenr;
     let type = this.cfgArray[nr][0];
     let name = this.cfgArray[nr][1];
+    let obj = this.cfgArray[nr][1];
     let getval = this.cfgArray[nr][2];
     let min = this.cfgArray[nr][4];
+    let arr = this.cfgArray[nr][4];
     let max = this.cfgArray[nr][5];
+    if (type=="slider1") {
+      name = obj.nam;
+      min = obj.min;
+      max = obj.max;
+    }
+    if (type=="radio1") {
+      name = obj.nam;
+      arr = obj.arr;
+    }
     //
     let x = 50;
-    let y = 150;
+    let y = 50;
     //
     let bName = this.makeButton(type+": "+name,
                   x,y,"white",undefined);
@@ -197,6 +192,7 @@ class DialogConf {
     this.data = getval();
     switch (type) {
       case "slider":
+      case "slider1":
         y += 50;
         bMin = this.makeButton(
                   "min: "+min,
@@ -224,6 +220,17 @@ class DialogConf {
         this.xType.style("background","yellow");
         this.divShowModify.child(this.xType);
       break;
+      case "radio1":
+        y += 50;
+        this.xType = createRadio(this.data);
+        this.xType.position(x,y);
+        this.xType.size(200);
+        for(let i=0;i<obj.arr.length;i++) {
+          this.xType.option(i,obj.arr[i]);
+        }
+        this.xType.style("background","yellow");
+        this.divShowModify.child(this.xType);
+      break;
       default:
         print("default");
       break;
@@ -234,14 +241,14 @@ class DialogConf {
   //
   makeShowOverview() {
     let bConf = this.makeButton("CONFIG",
-                  50,100,"white",undefined);
+                  50,50,"white",undefined);
     this.divShowOverview.child(bConf);
     let bBack = this.makeButton("BACK",
-                  150,100,"yellow",
+                  150,50,"yellow",
                   ()=>{this.event(4,this.elenr);});
     this.divShowOverview.child(bBack);
     let x = 50;
-    let y = 150;
+    let y = 100;
     for(let i=0;i<this.cfgArray.length;i++) {
       let div = this.makeShowOverview2(i,x,y+i*50);
       this.divShowOverview.child(div);
@@ -250,6 +257,8 @@ class DialogConf {
   makeShowOverview2(nr_,x_,y_) {
     let type = this.cfgArray[nr_][0];
     let name = this.cfgArray[nr_][1];
+    if (type=="slider1") {name=name.nam;}
+    if (type=="radio1") {name=name.nam;}
     let getval = this.cfgArray[nr_][2];
     let dOverX = createDiv();
     let bName, bValu, bModi;
@@ -263,6 +272,7 @@ class DialogConf {
         dOverX.child(bValu);
       break;
       case "slider":
+      case "slider1":
         bModi = 
           this.makeButton("MODIFY",
             x_,y_,"yellow",()=>{this.event(1,nr_);});
@@ -275,6 +285,7 @@ class DialogConf {
         dOverX.child(bValu);
       break;
       case "radio":
+      case "radio1":
         bModi = 
           this.makeButton("MODIFY",
             x_,y_,"yellow",()=>{this.event(1,nr_);});
