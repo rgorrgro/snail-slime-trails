@@ -31,7 +31,7 @@ let bgcolor, linecolor;
 let snailtype, snailmaxcnt, snailminlen;
 // etc
 let centralvector;
-let cyclesperrect = 100;
+let cyclesperrect = 30;
 //let snailtype = "All";
 //let snailtypeArray = ["All","One"];
 let colors;
